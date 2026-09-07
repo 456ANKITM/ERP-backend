@@ -1,6 +1,9 @@
-import app from "./app.js";
+import app from "./app";
 import { env } from "./config/env.js";
 import { connectDB, disconnectDB } from "./config/database.js";
+
+process.on("unhandledRejection", (reason) => { console.error(reason); process.exit(1); });
+process.on("uncaughtException", (err) => { console.error(err); process.exit(1); });
 
 const startServer = async () => {
   // first connect database without connecting it do not start our server
