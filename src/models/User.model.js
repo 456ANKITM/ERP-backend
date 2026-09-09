@@ -1,113 +1,209 @@
 import mongoose from "mongoose";
-import bcrypt from "bcrypt";
-import { ALL_ROLES, ROLES } from "@/constants/roles.js";
 
-const userSchema = new mongoose.Schema(
+const { Schema } = mongoose;
+
+// Object.freeze helps us to make a constant which can not be modified later because our statuses and roles does not need to get modified even by mistake.
+
+const USER_ROLES = Object.freeze({
+  SUPER_ADMIN: "SUPER_ADMIN",
+  OWNER: "OWNER",
+  STORE_MANAGER: "STORE_MANAGER",
+});
+
+const USER_STATUS = Object.freeze({
+  INVITED: "INVITED",
+  ACTIVE: "ACTIVE",
+  SUSPENDED: "SUSPENDED",
+  DISABLED: "DISABLED",
+});
+
+const userSchema = new Schema(
   {
     name: {
       type: String,
-      required: true,
+      required: [true, "Name is required"],
       trim: true,
-      minlength: 2,
-      maxlength: 100,
+      minlength: [2, "Name must be at least 2 characters"],
+      maxlength: [100, "Name can not exccede 100 characters"],
     },
     email: {
       type: String,
-      required: true,
+      required: [true, "Email is required"],
       unique: true,
       lowercase: true,
       trim: true,
-      index: true,
-      maxlength: 254,
+      maxlength: [254, "Email can not exceede 254 characters"],
+      match: [
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+        "Please provide a valid email address",
+      ],
     },
-    password: {
+    phone: {
       type: String,
-      required: true,
+      sparse: true, // Useful when we have unique field but optional
+      trim: true,
+      maxlength: [10, "Phone number can not exceede 20 characters"],
+    },
+    passwordHash: {
+      type: String,
+      required: [true, "Password hash is required"],
       select: false,
-      minlength: 6,
     },
     role: {
       type: String,
-      enum: ALL_ROLES,
-      required: true,
+      enum: {
+        values: Object.values(USER_ROLES),
+        message: "Invalid User role",
+      },
+      required: [true, "User Role is required"],
       index: true,
     },
-    // Owner: The Business they Own, Store manager: the business their store belongs to super admin always null
     businessId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Business",
       default: null,
       index: true,
     },
     storeId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Store",
       default: null,
       index: true,
     },
-    isActive: {
-      type: Boolean,
-      default: true,
+    status: {
+      type: String,
+      enum: {
+        values: Object.values(USER_STATUS),
+        message: "Invalid User Status",
+      },
+      default: USER_STATUS.INVITED,
       index: true,
+    },
+    emailVerifiedAt: {
+      type: Date,
+      default: null,
+    },
+    phoneVerifiedAt: {
+      type: Date,
+      default: null,
     },
     lastLoginAt: {
       type: Date,
       default: null,
     },
+    passwordChangedAt: {
+      type: Date,
+      default: null,
+    },
+    avatar: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+      immutable: true,
+    },
+    updatedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
+      index: true,
+    },
+    deletedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
   },
-  { timestamps: true },
+  {
+    timestamps: true,
+    versionKey: false, // this does not create _v inside document
+    strict: true, // remove unknown field while saving the document
+    toJSON: {
+      transform: (_, ret) => {
+        delete ret.passwordHash;
+        return ret;
+      },
+    }, // remove passwordHashin from the JSON response
+    toObject: {
+      transform: (_, ret) => {
+        delete ret.passwordHash;
+        return ret;
+      },
+    }, // does the same to the object
+  },
 );
 
-// Role and Scope Validation
+// Now we are going to enforce some validation for each 3 users
+// SUPER_ADMIN - Does not belongs to the business/store
+// OWNER: Must belong to a business and does not directly belong to a store
+// STORE MANAGER: Must belong to a business and a store
+
 userSchema.pre("validate", function (next) {
-  // super admin
-  if (this.role === ROLES.SUPER_ADMIN) {
-    if (this.businessId || this.storeId) {
-      return next(new Error("Super admin can not have businessId or storeId"));
-    }
+  if (this.role === USER_ROLES.SUPER_ADMIN) {
+    this.businessId = null;
+    this.storeId = null;
   }
 
-  // store owner
-  if (this.role === ROLES.OWNER) {
+  if (this.role === USER_ROLES.OWNER) {
     if (!this.businessId) {
-      return next(new Error("Owners must have a businessId"));
+      return next(new Error("Owner must belong to a business"));
     }
 
-    if (this.storeId) {
-      return next(new Error("Owner can not have storeId"));
-    }
+    this.storeId = null;
   }
 
-  // store manager
-  if (this.role === ROLES.STORE_MANAGER) {
+  if (this.role === USER_ROLES.STORE_MANAGER) {
     if (!this.businessId) {
-      return next(new Error("Store manager must have a business Id"));
+      return next(new Error("Store manager must belong to a business"));
+    }
+
+    if (!this.storeId) {
+      return next(new Error("Store manager must belong to a store"));
     }
   }
 
   next();
 });
 
-// Password hashing with bcrypt because we can not have store password in the database
+// Indexes
 
-userSchema.pre("save", async function (next) {
-  // if password has not changed then do not hash it again and again
-  if (!this.isModified("password")) {
-    return next();
-  }
-  try {
-    const salt = await bcrypt.genSalt(12);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    next(error);
-  }
+// Users belong to a business
+userSchema.index({
+  businessId: 1,
+  role: 1,
+  status: 1,
 });
 
-// Password Comparison
-userSchema.methods.comparePassword = async function (candidatePassword) {
-  return bcrypt.compare(candidatePassword, this.password);
-};
+// Users belongs to a specific store
+userSchema.index({
+  businessId: 1,
+  storeId: 1,
+  role: 1,
+  status: 1,
+});
+
+// Active Users
+userSchema.index({
+  businessId: 1,
+  status: 1,
+});
+
+// Soft-deleted Users, should  not normally appear in business Querries
+userSchema.index({
+  deletedAt: 1,
+});
+
+// Static Constants
+userSchema.statics.ROLES = USER_ROLES;
+userSchema.statics.STATUS = USER_STATUS;
 
 const User = mongoose.model("User", userSchema);
 
