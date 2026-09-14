@@ -31,7 +31,7 @@ const businessSchema = new Schema(
     ownerId: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: [true, "Business owner is required"],
+      default:null,
       index: true,
     },
     subscriptionId: {
@@ -151,7 +151,7 @@ const businessSchema = new Schema(
   {
     timestamps: true,
     versionKey: false,
-    strict: false,
+    strict: true,
     toJSON: {
       transform: (_, ret) => {
         return ret;

@@ -145,7 +145,6 @@ const storeSchema = new Schema(
     deletedAt: {
       type: Date,
       default: null,
-      index: true,
     },
     deletedBy: {
       type: Schema.Types.ObjectId,

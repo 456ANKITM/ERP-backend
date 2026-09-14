@@ -4,13 +4,13 @@ const { Schema } = mongoose;
 
 // Object.freeze helps us to make a constant which can not be modified later because our statuses and roles does not need to get modified even by mistake.
 
-const USER_ROLES = Object.freeze({
+export const USER_ROLES = Object.freeze({
   SUPER_ADMIN: "SUPER_ADMIN",
   OWNER: "OWNER",
   STORE_MANAGER: "STORE_MANAGER",
 });
 
-const USER_STATUS = Object.freeze({
+export const USER_STATUS = Object.freeze({
   INVITED: "INVITED",
   ACTIVE: "ACTIVE",
   SUSPENDED: "SUSPENDED",
@@ -43,6 +43,7 @@ const userSchema = new Schema(
       sparse: true, // Useful when we have unique field but optional
       trim: true,
       maxlength: [10, "Phone number can not exceede 20 characters"],
+      unique:true
     },
     passwordHash: {
       type: String,
@@ -146,7 +147,7 @@ const userSchema = new Schema(
 // OWNER: Must belong to a business and does not directly belong to a store
 // STORE MANAGER: Must belong to a business and a store
 
-userSchema.pre("validate", function (next) {
+userSchema.pre("validate", function () {
   if (this.role === USER_ROLES.SUPER_ADMIN) {
     this.businessId = null;
     this.storeId = null;
@@ -154,23 +155,19 @@ userSchema.pre("validate", function (next) {
 
   if (this.role === USER_ROLES.OWNER) {
     if (!this.businessId) {
-      return next(new Error("Owner must belong to a business"));
+      throw new Error("Owner must belong to a business");
     }
-
     this.storeId = null;
   }
 
   if (this.role === USER_ROLES.STORE_MANAGER) {
     if (!this.businessId) {
-      return next(new Error("Store manager must belong to a business"));
+      throw new Error("Store manager must belong to a business");
     }
-
     if (!this.storeId) {
-      return next(new Error("Store manager must belong to a store"));
+      throw new Error("Store manager must belong to a store");
     }
   }
-
-  next();
 });
 
 // Indexes
@@ -196,10 +193,7 @@ userSchema.index({
   status: 1,
 });
 
-// Soft-deleted Users, should  not normally appear in business Querries
-userSchema.index({
-  deletedAt: 1,
-});
+
 
 // Static Constants
 userSchema.statics.ROLES = USER_ROLES;
