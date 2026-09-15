@@ -8,6 +8,8 @@ import { env } from "@/config/env.js";
 import errorHandler from "@/middlewares/errorHandler.js";
 import authRoutes from "@/modules/auth/auth.routes.js";
 import businessManagementRoutes from "@/modules/businessManagement/business-management.routes.js";
+import storeRoutes from "@/modules/stores/stores.routes.js";
+
 
 const app = express();
 
@@ -62,6 +64,7 @@ app.get("/", (req, res) => {
 // Routes
 app.use("/auth", authRoutes);
 app.use("/businesses", businessManagementRoutes);
+app.use("/stores", storeRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: "Route not found" });
