@@ -47,7 +47,13 @@ const userSchema = new Schema(
     },
     passwordHash: {
       type: String,
-      required: [true, "Password hash is required"],
+      required: [
+        function () {
+          // Invited Users have no password until they accept the invite
+          return this.status !== USER_STATUS.INVITED
+        },
+        "password hash is required"
+      ],
       select: false,
     },
     role: {
