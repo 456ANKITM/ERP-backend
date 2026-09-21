@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const { Schema } = mongoose;
 
-const SUPPLIER_STATUS = Object.freeze({
+export const SUPPLIER_STATUS = Object.freeze({
   ACTIVE: "ACTIVE",
   INACTIVE: "INACTIVE",
 });

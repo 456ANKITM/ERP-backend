@@ -12,6 +12,7 @@ import storeRoutes from "./modules/stores/stores.routes.js";
 import userRoutes from "./modules/users/users.route.js";
 import productRoutes from "./modules/products/products.route.js";
 import categoryRoutes from "./modules/products/categories.route.js";
+import supplierRoutes from "./modules/suppliers/suppliers.route.js";
 
 
 const app = express();
@@ -71,6 +72,7 @@ app.use("/stores", storeRoutes);
 app.use("/users", userRoutes);
 app.use("/products", productRoutes);
 app.use("/categories", categoryRoutes);
+app.use("/suppliers", supplierRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: "Route not found" });
