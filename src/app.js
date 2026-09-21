@@ -10,6 +10,8 @@ import authRoutes from "./modules/auth/auth.routes.js";
 import businessManagementRoutes from "./modules/businessManagement/business-management.routes.js";
 import storeRoutes from "./modules/stores/stores.routes.js";
 import userRoutes from "./modules/users/users.route.js";
+import productRoutes from "./modules/products/products.route.js";
+import categoryRoutes from "./modules/products/categories.route.js";
 
 
 const app = express();
@@ -67,6 +69,8 @@ app.use("/auth", authRoutes);
 app.use("/businesses", businessManagementRoutes);
 app.use("/stores", storeRoutes);
 app.use("/users", userRoutes);
+app.use("/products", productRoutes);
+app.use("/categories", categoryRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: "Route not found" });
