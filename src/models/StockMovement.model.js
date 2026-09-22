@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const { Schema } = mongoose;
 
-const STOCK_MOVEMENT_TYPES = Object.freeze({
+export const STOCK_MOVEMENT_TYPES = Object.freeze({
   PURCHASE: "PURCHASE",
   SALE: "SALE",
   ADJUSTMENT: "ADJUSTMENT",

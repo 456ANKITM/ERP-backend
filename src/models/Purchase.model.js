@@ -2,10 +2,15 @@ import mongoose from "mongoose";
 
 const { Schema } = mongoose;
 
-const PAYMENT_STATUS = Object.freeze({
+export const PAYMENT_STATUS = Object.freeze({
   UNPAID: "UNPAID",
   PARTIAL: "PARTIAL",
   PAID: "PAID",
+});
+
+export const PURCHASE_RECORD_STATUS = Object.freeze({
+  RECORDED: "RECORDED",
+  CANCELLED: "CANCELLED",
 });
 
 const purchaseItemSchema = new Schema(
@@ -95,6 +100,17 @@ const purchaseSchema = new Schema(
       },
     },
 
+    
+    status: {
+  type: String,
+  enum: {
+    values: Object.values(PURCHASE_RECORD_STATUS),
+    message: "Invalid purchase status",
+  },
+  default: PURCHASE_RECORD_STATUS.RECORDED,
+  index: true,
+},
+
     subtotal: {
       type: Schema.Types.Decimal128,
       required: true,
@@ -167,6 +183,15 @@ const purchaseSchema = new Schema(
       ref: "User",
       default: null,
     },
+    cancelledAt: {
+  type: Date,
+  default: null,
+},
+cancelledBy: {
+  type: Schema.Types.ObjectId,
+  ref: "User",
+  default: null,
+},
   },
   {
     timestamps: true,
@@ -205,6 +230,7 @@ purchaseSchema.index({
 });
 
 purchaseSchema.statics.PAYMENT_STATUS = PAYMENT_STATUS;
+purchaseSchema.statics.RECORD_STATUS = PURCHASE_RECORD_STATUS;
 
 const Purchase = mongoose.model("Purchase", purchaseSchema);
 
