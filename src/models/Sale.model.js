@@ -2,18 +2,24 @@ import mongoose from "mongoose";
 
 const { Schema } = mongoose;
 
-const PAYMENT_STATUS = Object.freeze({
+export const PAYMENT_STATUS = Object.freeze({
   UNPAID: "UNPAID",
   PARTIAL: "PARTIAL",
   PAID: "PAID",
 });
 
-const PAYMENT_METHOD = Object.freeze({
+export const PAYMENT_METHOD = Object.freeze({
   CASH: "CASH",
   CARD: "CARD",
   BANK_TRANSFER: "BANK_TRANSFER",
   OTHER: "OTHER",
 });
+
+export const SALE_STATUS = Object.freeze({
+  COMPLETED:"COMPLETED", 
+  PARTIALLY_REFUNDED:"PARTIALLY_REFUNDED", 
+  REFUNDED:"REFUNDED"
+})
 
 const saleItemSchema = new Schema(
   {
@@ -53,6 +59,13 @@ const saleItemSchema = new Schema(
       required: true,
       min: 0,
     },
+
+    refundedQuantity: {
+      type: Number,
+      default: 0, 
+      min: 0
+    }, 
+
   },
   {
     _id: false,
@@ -156,6 +169,26 @@ const saleSchema = new Schema(
       index: true,
     },
 
+    status: {
+      type:String, 
+      enum: {
+        values:Object.values(SALE_STATUS), 
+        message:"Invalid Sale Status"
+      }, 
+      default:SALE_STATUS.COMPLETED, 
+      index:true
+    }, 
+    amountRefunded: {
+      type:Schema.Types.Decimal128, 
+      default:0, 
+      min: 0
+    }, 
+    updatedBy: {
+      type:Schema.Types.ObjectId, 
+      ref:"User", 
+      default:null
+    },
+
     soldBy: {
       type: Schema.Types.ObjectId,
       ref: "User",
@@ -208,6 +241,7 @@ saleSchema.index({
 
 saleSchema.statics.PAYMENT_STATUS = PAYMENT_STATUS;
 saleSchema.statics.PAYMENT_METHOD = PAYMENT_METHOD;
+saleSchema.statics.SALE_STATUS = SALE_STATUS
 
 const Sale = mongoose.model("Sale", saleSchema);
 
