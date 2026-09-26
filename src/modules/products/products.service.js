@@ -12,6 +12,7 @@ import {
   validateListProductsQuery,
   validateLowStockQuery,
 } from "./products.validator.js";
+import { notifyLowStock } from "../notifications/notifications.service.js";
 
 const buildPagination = ({ page, limit, total }) => {
   const totalPages = Math.ceil(total / limit);
@@ -274,6 +275,16 @@ export const adjustStock = async ({
   product.updatedBy = user._id;
 
   await product.save();
+  const crossedIntoLow =
+  previousQuantity > product.recorderLevel && newQuantity <= product.recorderLevel;
+
+  if (crossedIntoLow) {
+  await notifyLowStock({
+    businessId: product.businessId,
+    storeId: product.storeId,
+    product,
+  });
+}
 
   const movement = await StockMovement.create({
     businessId: product.businessId,

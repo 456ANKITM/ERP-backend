@@ -9,6 +9,7 @@ import Customer from "@/models/Customer.model";
 import Product from "@/models/Product.model";
 import StockMovement from "@/models/StockMovement.model";
 import Business from "@/models/Business.model";
+import { notifyLowStock } from "../notifications/notifications.service";
 
 const buildPagination = ({ page, limit, total }) => {
   const totalPages = Math.ceil(total / limit);
@@ -233,6 +234,15 @@ export const createSale = async ({ user, data }) => {
         product.quantityInStock = newQuantity;
         product.updatedBy = user._id;
         await product.save({ session });
+
+        const crossedIntoLow =
+  previousQuantity > product.recorderLevel && newQuantity <= product.recorderLevel;
+
+if (crossedIntoLow) {
+  // Fire-and-forget outside the transaction's atomicity concerns —
+  // a notification failing shouldn't roll back a completed sale.
+  notifyLowStock({ businessId: product.businessId, storeId, product }).catch(() => {});
+}
 
         await StockMovement.create(
           [
