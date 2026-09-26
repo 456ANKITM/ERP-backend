@@ -131,6 +131,21 @@ const storeSchema = new Schema(
         close: String,
       },
     },
+    settings: {
+      receiptFooter: {
+        type: String,
+        trim: true,
+        maxlength: 500,
+        default: null,
+      },
+      invoicePrefix: {
+        type: String,
+        trim: true,
+        uppercase: true,
+        maxlength: 20,
+        default: null,
+      },
+    },
     createdBy: {
       type: Schema.Types.ObjectId,
       ref: "User",

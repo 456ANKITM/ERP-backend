@@ -18,6 +18,8 @@ import saleRoutes from "./modules/sales/sales.route.js";
 import customerRoutes from "./modules/customers/customers.route.js";
 import reportRoutes from "./modules/reports/reports.route.js";
 import notificationRoutes from "./modules/notifications/notifications.route.js";
+import settingsRoutes from "./modules/settings/settings.route.js";
+
 
 const app = express();
 
@@ -82,6 +84,7 @@ app.use("/sales", saleRoutes);
 app.use("/customers", customerRoutes);
 app.use("/reports", reportRoutes);
 app.use("/notifications", notificationRoutes);
+app.use("/settings", settingsRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: "Route not found" });

@@ -31,7 +31,7 @@ const businessSchema = new Schema(
     ownerId: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      default:null,
+      default: null,
       index: true,
     },
     subscriptionId: {
@@ -102,6 +102,12 @@ const businessSchema = new Schema(
       trim: true,
       uppercase: true,
       maxlength: 50,
+    },
+    taxRate: {
+      type: Number,
+      default: 0,
+      min: [0, "Tax rate cannot be negative"],
+      max: [100, "Tax rate cannot exceed 100"],
     },
     logo: {
       type: String,
